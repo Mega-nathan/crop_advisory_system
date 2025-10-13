@@ -1,0 +1,1379 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Smart Crop Advisory Dashboard</title>
+    <!-- Google Material Icons -->
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      body {
+        margin: 0;
+        font-family: "Segoe UI", Arial, sans-serif;
+        background: rgba(54, 120, 192, 0.06);
+      }
+
+      .sidebar {
+        width: 240px;
+        height: 100vh;
+        background: #f4f8ff;
+        border-right: 2px solid #e1ecf8;
+        position: fixed;
+        display: flex;
+        flex-direction: column;
+        padding-top: 20px;
+      }
+
+      .sidebar-title {
+        color: #2166e3;
+        font-size: 1.4em;
+        font-weight: bold;
+        margin-left: 32px;
+        margin-bottom: 28px;
+      }
+
+      .sidebar-nav {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      .sidebar-nav li {
+        display: flex;
+        align-items: center;
+        padding: 13px 30px;
+        color: #262c36;
+        font-size: 1em;
+        border-radius: 8px 0 0 8px;
+        cursor: pointer;
+        transition: background 0.16s;
+        margin-bottom: 6px;
+      }
+
+      .sidebar-nav li.active,
+      .sidebar-nav li:hover {
+        background: #e9f2ff;
+        color: #2166de;
+        font-weight: 550;
+      }
+
+      .sidebar-nav .material-icons {
+        margin-right: 16px;
+        font-size: 1.35em;
+        background: #eaf1ff;
+        border-radius: 50%;
+        padding: 5px;
+        margin-left: -7px;
+        margin-right: 14px;
+        color: #2166e3;
+        transition: background 0.18s;
+      }
+
+      .main-content {
+        margin-left: 240px;
+        padding: 36px 40px;
+        min-height: 100vh;
+        background: transparent;
+      }
+
+      .dashboard-header {
+        font-size: 2em;
+        font-weight: bold;
+        margin-bottom: 32px;
+        letter-spacing: -1.5px;
+      }
+
+      .info-cards-row {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 36px;
+        flex-wrap: wrap;
+      }
+
+      .info-card {
+        background: linear-gradient(135deg, #fbfdff 60%, #e3f0ff 100%);
+        border-radius: 14px;
+        box-shadow: 0 1.5px 6px #e4edfa40;
+        flex: 1 1 190px;
+        min-width: 190px;
+        min-height: 90px;
+        padding: 22px 20px 16px 20px;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        transition: box-shadow 0.3s ease, transform 0.25s ease;
+        overflow: hidden;
+      }
+
+      .info-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        transform: translateY(-3px);
+        background: linear-gradient(120deg, #f5fbff 55%, #cae3fa 100%);
+      }
+
+      .info-card .desc {
+        color: #536283;
+        font-size: 0.9em;
+        font-weight: 600;
+        letter-spacing: -0.1px;
+        opacity: 0.85;
+        margin-bottom: 10px;
+      }
+
+      .info-card h2 {
+        font-size: 1.8em;
+        font-weight: 700;
+        margin-bottom: 4px;
+        letter-spacing: -0.3px;
+        color: #22314b;
+        text-shadow: 0 1px 3px #dde6f570;
+      }
+
+      .chip {
+        position: absolute;
+        top: 14px;
+        right: 16px;
+        font-size: 0.9em;
+        font-weight: 700;
+        border-radius: 14px;
+        padding: 4px 12px 3px 12px;
+        box-shadow: 0 1px 3px #c6edda69;
+        transition: background 0.2s, color 0.2s;
+        z-index: 2;
+      }
+
+      .chip.alert {
+        background: #fff2f2;
+        color: #cc143d;
+      }
+
+      .chip.badge {
+        background: #fff6db;
+        color: #b4930c;
+      }
+
+      .chip.rate {
+        background: #e5f2ff;
+        color: #1973ba;
+      }
+
+      .dashboard-sections {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 30px;
+      }
+
+      .section {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 0 10px #e4edfa26;
+        flex: 1 1 370px;
+        padding: 26px 26px;
+        min-width: 320px;
+        max-width: 500px;
+      }
+
+      .section-title {
+        font-size: 1.15em;
+        font-weight: bold;
+        margin-bottom: 16px;
+        color: #1b242b;
+      }
+
+      .chart-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-bottom: 4px;
+      }
+
+      .legend {
+        display: flex;
+        justify-content: center;
+        gap: 32px;
+        margin-top: 0px;
+        margin-bottom: 6px;
+      }
+
+      .legend span {
+        font-size: 0.97em;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-weight: 500;
+      }
+
+      .green-dot,
+      .yellow-dot,
+      .red-dot {
+        width: 24px;
+        height: 8px;
+        border-radius: 2px;
+        display: inline-block;
+      }
+
+      .green-dot {
+        background: #26b36c;
+      }
+
+      .yellow-dot {
+        background: #ffe457;
+      }
+
+      .red-dot {
+        background: #fd5252;
+      }
+
+      .crop-health-value {
+        text-align: center;
+        margin: 14px 0 3px 0;
+        font-size: 1.65em;
+        color: #19b34b;
+        font-weight: 700;
+      }
+
+      .ndvi-subtitle {
+        text-align: center;
+        color: #888;
+        font-size: 1em;
+        margin-bottom: 6px;
+        letter-spacing: -0.1px;
+        font-weight: 400;
+      }
+
+      .chart-area {
+        width: 100%;
+        height: 320px;
+        margin-bottom: 10px;
+        position: relative;
+      }
+
+      .filter-buttons {
+        margin-bottom: 15px;
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+      }
+
+      .filter-btn {
+        background: #e8eaf6;
+        border: none;
+        border-radius: 24px;
+        padding: 8px 24px;
+        color: #222;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.25s ease;
+        user-select: none;
+        font-size: 0.95em;
+      }
+
+      .filter-btn.active {
+        background-color: #2254f4;
+        color: white;
+      }
+
+      .legend-container {
+        margin-top: 4px;
+        display: flex;
+        gap: 24px;
+        font-weight: 600;
+        font-size: 14px;
+        color: #444;
+        justify-content: center;
+      }
+
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .legend-color {
+        width: 20px;
+        height: 8px;
+        border-radius: 3px;
+        display: inline-block;
+      }
+
+      .legend-wheat {
+        background-color: #ffd466;
+      }
+
+      .legend-cotton {
+        background-color: #97c4fb;
+      }
+
+      #cropHealthChart {
+        width: 220px;
+        height: 220px;
+        max-width: 220px;
+        max-height: 220px;
+        margin-bottom: 5px;
+        margin-top: 0px;
+        display: block;
+      }
+
+      /* Weather & Farming tips section */
+      .weather-farming-container {
+        max-width: 70%;
+        margin: 0 auto;
+        display: flex;
+        gap: 24px;
+        justify-content: center;
+        flex-wrap: wrap;
+        max-height: 380px;
+        /* Match advisory section height */
+        padding-right: 8px;
+        background: #f5faff;
+        border-radius: 12px;
+        box-shadow: 0 2px 6px rgb(34 84 244 / 0.12);
+        overflow: hidden;
+        /* Hide overall scroll */
+      }
+
+      .weather-summary {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 14px 20px;
+        border-radius: 12px;
+        background: #e9f2ff;
+        box-shadow: 0 2px 8px rgba(34, 84, 244, 0.15);
+        min-width: 250px;
+        flex-shrink: 0;
+        height: 100%;
+      }
+
+      .weather-icon {
+        font-size: 48px;
+        color: #1e3c72;
+      }
+
+      .weather-info {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        font-weight: 600;
+        color: #1565c0;
+      }
+
+      .weather-info #temperature {
+        font-size: 1.25em;
+        font-weight: 700;
+      }
+
+      .weather-info #soilMoisture {
+        font-size: 0.95em;
+        color: #3074bb;
+        font-weight: 600;
+      }
+
+      .farming-tips {
+        max-width: 330px;
+        max-height: 340px;
+        /* scroll height */
+        overflow-y: auto;
+        padding-left: 20px;
+        margin: 0;
+        font-size: 0.95em;
+        color: #415365;
+        font-weight: 500;
+        line-height: 1.4;
+        scroll-behavior: smooth;
+      }
+
+      .farming-tips ul {
+        padding-left: 0;
+        margin: 0;
+        list-style-position: inside;
+      }
+
+      .farming-tips li {
+        margin-bottom: 7px;
+        list-style-type: disc;
+      }
+
+      .farming-tips::-webkit-scrollbar {
+        width: 8px;
+        background: #e6f0ff;
+        border-radius: 10px;
+      }
+
+      .farming-tips::-webkit-scrollbar-thumb {
+        background: #4291ff;
+        border-radius: 10px;
+      }
+
+      @media (max-width: 900px) {
+        .weather-farming-container {
+          flex-direction: column;
+          align-items: center;
+          max-width: 100%;
+          max-height: none;
+          overflow: visible;
+        }
+
+        .weather-summary,
+        .farming-tips {
+          max-width: 100%;
+          min-width: auto;
+          max-height: none;
+          overflow: visible;
+          margin-bottom: 14px;
+        }
+      }
+
+      /* Recent advisory and chatbot activity */
+      .advisory-section {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 0 10px #e4edfa26;
+        padding: 26px 24px 10px 24px;
+        min-width: 320px;
+        max-width: 350px;
+        max-height: 380px;
+        margin-bottom: 32px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        overflow: hidden;
+      }
+
+      .advisory-title {
+        font-size: 1.13em;
+        font-weight: bold;
+        color: #162c3c;
+        margin-bottom: 13px;
+        letter-spacing: -0.5px;
+      }
+
+      .advisory-list {
+        overflow-y: auto;
+        max-height: 305px;
+        width: 100%;
+        padding-right: 10px;
+      }
+
+      .advisory-item {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 19px;
+        position: relative;
+        gap: 12px;
+      }
+
+      .advisory-edge {
+        width: 7px;
+        border-radius: 6px;
+        flex-shrink: 0;
+        height: 42px;
+        margin-right: 9px;
+        margin-top: 1px;
+      }
+
+      .advisory-edge.blue {
+        background: #1959fa;
+      }
+
+      .advisory-edge.yellow {
+        background: #ffd400;
+      }
+
+      .advisory-edge.red {
+        background: #df1c1c;
+      }
+
+      .advisory-edge.green {
+        background: #2ada76;
+      }
+
+      .advisory-edge.orange {
+        background: #ff9e19;
+      }
+
+      .advisory-edge.primary {
+        background: #2f8bf6;
+      }
+
+      .advisory-content {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        flex: 1;
+      }
+
+      .advisory-heading {
+        font-size: 1em;
+        font-weight: 700;
+        color: #16203a;
+        margin-bottom: 2px;
+        line-height: 1.1;
+      }
+
+      .advisory-desc {
+        font-size: 0.97em;
+        color: #40516c;
+        margin-bottom: 2px;
+        opacity: 0.92;
+        font-weight: 500;
+      }
+
+      .advisory-time {
+        font-size: 0.91em;
+        color: #7789a0;
+        font-weight: 500;
+        margin-top: 1px;
+      }
+
+      .advisory-list::-webkit-scrollbar {
+        width: 7px;
+        background: #ecf2f9;
+        border-radius: 10px;
+      }
+
+      .advisory-list::-webkit-scrollbar-thumb {
+        background: #d1dbe8;
+        border-radius: 8px;
+      }
+
+      /* Crop Calendar Styles */
+      .crop-calendar {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 0 10px #e4edfa26;
+        padding: 26px 24px;
+        margin-top: 20px;
+        max-width: 500px;
+        overflow-x: auto;
+      }
+
+      .crop-calendar table {
+        width: 100%;
+        border-collapse: collapse;
+        font-weight: 600;
+        user-select: none;
+      }
+
+      .crop-calendar th,
+      .crop-calendar td {
+        border: 1px solid #ddd;
+        padding: 9px 12px;
+        text-align: center;
+        font-weight: 600;
+      }
+
+      .crop-calendar th {
+        background-color: #f0f5ff;
+        color: #1b242b;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+
+      /* Highlight current month column */
+      .current-month {
+        background-color: #dceeff;
+      }
+
+      .sowing {
+        background-color: #ffecb3;
+        /* light yellow */
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        margin: 0 auto;
+        cursor: help;
+        position: relative;
+      }
+
+      .irrigation {
+        background-color: #bbdefb;
+        /* light blue */
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        margin: 0 auto;
+        cursor: help;
+        position: relative;
+      }
+
+      .harvesting {
+        background-color: #c8e6c9;
+        /* light green */
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        margin: 0 auto;
+        cursor: help;
+        position: relative;
+      }
+
+      /* Tooltips */
+      .sowing::after,
+      .irrigation::after,
+      .harvesting::after {
+        content: attr(title);
+        position: absolute;
+        bottom: 125%;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: rgba(0, 0, 0, 0.75);
+        color: #fff;
+        padding: 4px 8px;
+        border-radius: 4px;
+        white-space: nowrap;
+        font-size: 0.75em;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.15s ease-in-out;
+        z-index: 50;
+      }
+
+      .sowing:hover::after,
+      .irrigation:hover::after,
+      .harvesting:hover::after {
+        opacity: 1;
+      }
+
+      @media (max-width: 900px) {
+        .crop-calendar {
+          overflow-x: scroll;
+        }
+      }
+
+      .season-legend {
+        margin-top: 16px;
+        display: flex;
+        gap: 36px;
+        font-weight: 700;
+        color: #2c3e50;
+        justify-content: center;
+      }
+
+      .season-legend span {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 1em;
+      }
+
+      .legend-dot {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+      }
+
+      .legend-dot.sowing {
+        background-color: #ffecb3;
+        /* light yellow */
+      }
+
+      .legend-dot.irrigation {
+        background-color: #bbdefb;
+        /* light blue */
+      }
+
+      .legend-dot.harvesting {
+        background-color: #c8e6c9;
+        /* light green */
+      }
+
+      .labour-heatmap-section {
+        margin-top: 24px;
+        max-width: 550px;
+      }
+
+      .heatmap-container {
+        background: #7c79e9;
+        border-radius: 18px;
+        padding: 18px 0 28px 0;
+        margin-top: 7px;
+        margin-bottom: 14px;
+        position: relative;
+        box-shadow: 0 2px 14px #4d6a9340;
+        overflow: hidden;
+      }
+
+      .heatmap-status {
+        text-align: center;
+        margin-bottom: 18px;
+        margin-top: 8px;
+      }
+
+      .heatmap-title {
+        display: block;
+        font-size: 1.25em;
+        font-weight: 700;
+        color: #222838;
+        letter-spacing: -0.2px;
+      }
+
+      .heatmap-subtitle {
+        display: block;
+        font-size: 1em;
+        color: #535a89;
+        font-weight: 500;
+        margin-top: 2px;
+        margin-bottom: 3px;
+      }
+
+      .simulated-heatmap {
+        text-align: center;
+        line-height: 155px;
+        font-size: 2em;
+        background: radial-gradient(
+            at 20% 60%,
+            #fd8585bb 40px,
+            transparent 80px
+          ),
+          radial-gradient(at 50% 56%, #89fd85bb 60px, transparent 120px),
+          radial-gradient(at 80% 60%, #fded85bb 40px, transparent 80px), #7c79e9;
+        color: #e0f0de;
+        border-radius: 14px;
+        margin: 0 16px;
+        font-weight: 600;
+        position: relative;
+        z-index: 1;
+        min-height: 130px;
+        letter-spacing: 0.01em;
+        box-shadow: 0 6px 36px #5c7efb55;
+      }
+
+      .heatmap-legend {
+        display: flex;
+        justify-content: space-evenly;
+        margin-top: 7px;
+        gap: 22px;
+        font-size: 1em;
+        font-weight: 600;
+      }
+
+      .legend-dot {
+        display: inline-block;
+        vertical-align: middle;
+        margin-right: 4px;
+        border-radius: 6px;
+        width: 24px;
+        height: 10px;
+      }
+
+      .legend-dot.low {
+        background: #fd8585;
+      }
+
+      .legend-dot.med {
+        background: #fded85;
+      }
+
+      .legend-dot.high {
+        background: #89fd85;
+      }
+    </style>
+  </head>
+
+  <body>
+    <nav class="sidebar">
+      <div class="sidebar-title">🌱Smart Crop Advisory</div>
+      <ul class="sidebar-nav">
+        <li class="active">
+          <span class="material-icons">dashboard</span>Dashboard
+        </li>
+        <li style="color: blue">
+          <span class="material-icons">smart_toy</span
+          ><a href="http://localhost:8000/chatbot">Chatbot</a>
+        </li>
+        <li>
+          <span class="material-icons">shopping_cart</span
+          ><a
+            style="text-decoration: none; color: blue"
+            href="http://localhost:8000/marketPrice"
+            >Market Price</a
+          >
+        </li>
+        <li>
+          <span class="material-icons">bug_report</span
+          ><a
+            style="text-decoration: none; color: blue"
+            href="http://localhost:8000/pest"
+            >Pest/Disease Detection</a
+          >
+        </li>
+        <li>
+          <span class="material-icons">groups</span
+          ><a
+            style="text-decoration: none; color: blue"
+            href="http://localhost:8000/weather"
+            >Weather</a
+          >
+        </li>
+      </ul>
+    </nav>
+    <main class="main-content">
+      <div class="dashboard-header">Dashboard</div>
+      <!--<div class="info-cards-row">
+            <div class="info-card">
+                <span class="desc">Total Area Monitored</span>
+                <h2>1,240 Acres</h2>
+                <span class="chip">+4.5%</span>
+            </div>
+            <div class="info-card">
+                <span class="desc">Active Pest/Disease Alerts</span>
+                <h2>9</h2>
+                <span class="chip alert">3 Critical</span>
+            </div>
+            <div class="info-card">
+                <span class="desc">Chatbot Queries</span>
+                <h2>3,124</h2>
+                <span class="chip badge">12% growth</span>
+            </div>
+            <div class="info-card">
+                <span class="desc">Local Labour Availability</span>
+                <h2>85% Match Rate</h2>
+                <span class="chip rate">High</span>
+            </div>
+        </div>-->
+      <div class="dashboard-sections">
+        <section class="section">
+          <div class="section-title">Current Crop Health Status</div>
+          <div class="chart-container">
+            <canvas id="cropHealthChart"></canvas>
+            <div class="legend">
+              <span><span class="green-dot"></span>Healthy</span>
+              <span><span class="yellow-dot"></span>Mild Stress</span>
+              <span><span class="red-dot"></span>Critical Stress</span>
+            </div>
+          </div>
+          <div class="crop-health-value">82% Healthy</div>
+          <div class="ndvi-subtitle">
+            Based on NDVI satellite imagery analysis.
+          </div>
+        </section>
+        <section class="section">
+          <div class="section-title">
+            Commodity Price Trends (Wheat & Cotton)
+          </div>
+          <div class="filter-buttons">
+            <button class="filter-btn active" data-range="6m">
+              Last 6 Months
+            </button>
+            <button class="filter-btn" data-range="1y">Last Year</button>
+            <button class="filter-btn" data-range="3y">3 Years</button>
+          </div>
+          <div class="chart-area">
+            <canvas id="priceChart"></canvas>
+          </div>
+          <div class="legend-container">
+            <div class="legend-item">
+              <span class="legend-color legend-wheat"></span> Wheat Price
+              (INR/Quintal)
+            </div>
+            <div class="legend-item">
+              <span class="legend-color legend-cotton"></span> Cotton Price
+              (INR/Quintal)
+            </div>
+          </div>
+        </section>
+
+        <section class="crop-calendar">
+          <div class="section-title">Crop Calendar</div>
+          <table>
+            <thead>
+              <tr>
+                <th>Crop</th>
+                <th class="current-month">Oct</th>
+                <th>Nov</th>
+                <th>Dec</th>
+                <th>Jan</th>
+                <th>Feb</th>
+                <th>Mar</th>
+                <th>Apr</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Wheat</td>
+                <td>
+                  <div class="sowing" title="Sowing"></div>
+                </td>
+                <td>
+                  <div class="sowing" title="Sowing"></div>
+                </td>
+                <td>
+                  <div class="irrigation" title="Irrigation"></div>
+                </td>
+                <td>
+                  <div class="irrigation" title="Irrigation"></div>
+                </td>
+                <td>
+                  <div class="irrigation" title="Irrigation"></div>
+                </td>
+                <td>
+                  <div class="irrigation" title="Irrigation"></div>
+                </td>
+                <td>
+                  <div class="harvesting" title="Harvesting"></div>
+                </td>
+              </tr>
+              <tr>
+                <td>Cotton</td>
+                <td></td>
+                <td></td>
+                <td>
+                  <div class="sowing" title="Sowing"></div>
+                </td>
+                <td>
+                  <div class="sowing" title="Sowing"></div>
+                </td>
+                <td>
+                  <div class="irrigation" title="Irrigation"></div>
+                </td>
+                <td>
+                  <div class="irrigation" title="Irrigation"></div>
+                </td>
+                <td>
+                  <div class="harvesting" title="Harvesting"></div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="season-legend">
+            <span>
+              <div class="legend-dot sowing"></div>
+              Sowing
+            </span>
+            <span>
+              <div class="legend-dot irrigation"></div>
+              Irrigation
+            </span>
+            <span>
+              <div class="legend-dot harvesting"></div>
+              Harvesting
+            </span>
+          </div>
+        </section>
+
+        <section class="section labour-heatmap-section">
+          <div class="section-title">Labour Availability Heatmap</div>
+          <div class="heatmap-container">
+            <div class="heatmap-status">
+              <span class="heatmap-title">High Availability Zone</span>
+              <span class="heatmap-subtitle">12 Available Teams Nearby</span>
+            </div>
+            <div class="simulated-heatmap">Simulated Geo Map Data</div>
+          </div>
+          <div class="heatmap-legend">
+            <span><span class="legend-dot low"></span> Low Avail.</span>
+            <span><span class="legend-dot med"></span> Medium Avail.</span>
+            <span><span class="legend-dot high"></span> High Avail.</span>
+          </div>
+        </section>
+
+        <section class="advisory-section">
+          <div class="advisory-title">Recent Advisory & Chatbot Activity</div>
+          <div class="advisory-list">
+            <div class="advisory-item">
+              <div class="advisory-edge blue"></div>
+              <div class="advisory-content">
+                <div class="advisory-heading">
+                  Advisory: Fertilization Plan Update
+                </div>
+                <div class="advisory-desc">
+                  Recommended 15-day nitrogen boost for Plot 3.
+                  <b>"High Priority."</b>
+                </div>
+                <div class="advisory-time">2 hours ago</div>
+              </div>
+            </div>
+            <div class="advisory-item">
+              <div class="advisory-edge primary"></div>
+              <div class="advisory-content">
+                <div class="advisory-heading">Chatbot: Query on Pesticide</div>
+                <div class="advisory-desc">
+                  User asked for alternatives to ‘Chlorpyrifos’ for Tomato
+                  blight.
+                </div>
+                <div class="advisory-time">5 hours ago</div>
+              </div>
+            </div>
+            <div class="advisory-item">
+              <div class="advisory-edge red"></div>
+              <div class="advisory-content">
+                <div class="advisory-heading">
+                  Pest Alert: Early-Stage Whitefly
+                </div>
+                <div class="advisory-desc">
+                  <b>Confirmed Whitefly infestation in Plot 1.</b> Immediate
+                  action needed.
+                </div>
+                <div class="advisory-time">1 day ago</div>
+              </div>
+            </div>
+            <div class="advisory-item">
+              <div class="advisory-edge yellow"></div>
+              <div class="advisory-content">
+                <div class="advisory-heading">Labour Connect: Job Posted</div>
+                <div class="advisory-desc">
+                  Need 5 workers for harvesting starting next Monday.
+                </div>
+                <div class="advisory-time">2 days ago</div>
+              </div>
+            </div>
+            <div class="advisory-item">
+              <div class="advisory-edge green"></div>
+              <div class="advisory-content">
+                <div class="advisory-heading">
+                  Chatbot: Farming Equipment Advice
+                </div>
+                <div class="advisory-desc">
+                  Suggested options for low-cost drip irrigation kits.
+                </div>
+                <div class="advisory-time">2 days ago</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-title">Weather & Farming Tips</div>
+          <div class="weather-farming-container">
+            <div class="weather-summary">
+              <span class="material-icons weather-icon" id="weatherIcon"
+                >wb_sunny</span
+              >
+              <div class="weather-info">
+                <span id="weatherCondition">Loading weather...</span>
+                <span id="temperature"></span>
+                <span id="location"></span>
+                <span id="soilMoisture"></span>
+              </div>
+            </div>
+            <div class="farming-tips">
+              <strong>Farming Tips:</strong>
+              <ul id="farmingTips"></ul>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+    <script>
+      // Reuse your chart and weather fetching code here...
+      const cropCtx = document
+        .getElementById("cropHealthChart")
+        .getContext("2d");
+      new Chart(cropCtx, {
+        type: "doughnut",
+        data: {
+          labels: ["Healthy", "Mild Stress", "Critical Stress"],
+          datasets: [
+            {
+              data: [82, 12, 6],
+              backgroundColor: ["#26b36c", "#ffe457", "#fd5252"],
+              borderWidth: 0,
+            },
+          ],
+        },
+        options: {
+          responsive: false,
+          cutout: "65%",
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: (context) => `${context.label}: ${context.parsed}%`,
+              },
+            },
+            legend: { display: false },
+          },
+        },
+      });
+
+      // Commodity Price Trends
+      const commodityData = {
+        "6m": {
+          labels: ["Apr", "May", "Jun", "Jul", "Aug", "Sep"],
+          wheat: [6500, 6700, 6800, 6900, 7000, 7100],
+          cotton: [7100, 7200, 7150, 7300, 7350, 7500],
+        },
+        "1y": {
+          labels: [
+            "Oct",
+            "Nov",
+            "Dec",
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+          ],
+          wheat: [
+            6200, 6250, 6300, 6400, 6500, 6600, 6700, 6800, 6850, 6900, 7000,
+            7100,
+          ],
+          cotton: [
+            7000, 7050, 7100, 7150, 7200, 7250, 7300, 7350, 7375, 7400, 7450,
+            7500,
+          ],
+        },
+        "3y": {
+          labels: [
+            "Oct '22",
+            "Nov '22",
+            "Dec '22",
+            "Jan '23",
+            "Feb '23",
+            "Mar '23",
+            "Apr '23",
+            "May '23",
+            "Jun '23",
+            "Jul '23",
+            "Aug '23",
+            "Sep '23",
+            "Oct '23",
+            "Nov '23",
+            "Dec '23",
+            "Jan '24",
+            "Feb '24",
+            "Mar '24",
+            "Apr '24",
+            "May '24",
+            "Jun '24",
+            "Jul '24",
+            "Aug '24",
+            "Sep '24",
+            "Oct '24",
+            "Nov '24",
+            "Dec '24",
+            "Jan '25",
+            "Feb '25",
+            "Mar '25",
+            "Apr '25",
+            "May '25",
+            "Jun '25",
+            "Jul '25",
+            "Aug '25",
+            "Sep '25",
+          ],
+          wheat: [
+            4100, 4200, 4350, 4500, 4650, 4800, 5000, 5100, 5300, 5500, 5700,
+            5900, 6100, 6200, 6400, 6500, 6600, 6700, 6800, 6900, 6950, 7000,
+            7050, 7100, 7200, 7250, 7300, 7400, 7500, 7600, 7700, 7800, 7850,
+            7900, 7950, 8000,
+          ],
+          cotton: [
+            4100, 4200, 4250, 4300, 4350, 4450, 4550, 4600, 4700, 4800, 4900,
+            5000, 5100, 5150, 5200, 5300, 5450, 5550, 5650, 5750, 5800, 5850,
+            5900, 5950, 6000, 6100, 6150, 6200, 6250, 6350, 6400, 6450, 6500,
+            6550, 6600, 6650,
+          ],
+        },
+      };
+      const priceCtx = document.getElementById("priceChart").getContext("2d");
+      let priceChart;
+      function renderPriceChart(range) {
+        const data = commodityData[range];
+        const chartData = {
+          labels: data.labels,
+          datasets: [
+            {
+              label: "Wheat Price (INR/Quintal)",
+              data: data.wheat,
+              borderColor: "#ffd466",
+              backgroundColor: "rgba(255, 212, 102, 0.25)",
+              borderWidth: 3,
+              fill: true,
+              tension: 0.3,
+              pointRadius: 5,
+              pointHoverRadius: 7,
+              pointBackgroundColor: "#ffd466",
+              pointHoverBackgroundColor: "#ffd466",
+              cubicInterpolationMode: "monotone",
+            },
+            {
+              label: "Cotton Price (INR/Quintal)",
+              data: data.cotton,
+              borderColor: "#97c4fb",
+              backgroundColor: "rgba(151, 196, 251, 0.25)",
+              borderWidth: 3,
+              fill: true,
+              tension: 0.3,
+              pointRadius: 5,
+              pointHoverRadius: 7,
+              pointBackgroundColor: "#97c4fb",
+              pointHoverBackgroundColor: "#97c4fb",
+              cubicInterpolationMode: "monotone",
+            },
+          ],
+        };
+        const chartOptions = {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            mode: "nearest",
+            intersect: false,
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (context) => `₹${context.parsed.y}`,
+              },
+              backgroundColor: "#333",
+              titleFont: { weight: "600" },
+            },
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { color: "#757980", font: { weight: "600" } },
+            },
+            y: {
+              grid: { color: "#eee", borderDash: [4, 6] },
+              ticks: {
+                color: "#757980",
+                font: { weight: "600" },
+                callback: (value) => `₹${value}`,
+              },
+              beginAtZero: false,
+            },
+          },
+        };
+        if (priceChart) {
+          priceChart.data = chartData;
+          priceChart.options = chartOptions;
+          priceChart.update();
+        } else {
+          priceChart = new Chart(priceCtx, {
+            type: "line",
+            data: chartData,
+            options: chartOptions,
+          });
+        }
+      }
+      renderPriceChart("6m");
+      const buttons = document.querySelectorAll(".filter-btn");
+      buttons.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          buttons.forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          const range = btn.getAttribute("data-range");
+          renderPriceChart(range);
+        });
+      });
+      const weatherCondEl = document.getElementById("weatherCondition");
+      const tempEl = document.getElementById("temperature");
+      const locationEl = document.getElementById("location");
+      const soilMoistureEl = document.getElementById("soilMoisture");
+      const tipsEl = document.getElementById("farmingTips");
+      const weatherIconEl = document.getElementById("weatherIcon");
+      function setWeatherIcon(main) {
+        const iconMap = {
+          clear: "wb_sunny",
+          clouds: "cloud",
+          rain: "umbrella",
+          drizzle: "grain",
+          thunderstorm: "thunderstorm",
+          snow: "ac_unit",
+          mist: "blur_on",
+          smoke: "blur_on",
+          haze: "blur_on",
+          fog: "blur_on",
+          sand: "filter_drama",
+          dust: "filter_drama",
+          ash: "filter_drama",
+          squall: "toys",
+          tornado: "waves",
+        };
+        weatherIconEl.textContent = iconMap[main.toLowerCase()] || "wb_sunny";
+      }
+      function updateFarmingTips(temp, soilMoisture, weather) {
+        let tips = [];
+        if (soilMoisture < 45) {
+          tips.push("Monitor soil moisture and irrigate if below 45%.");
+        } else {
+          tips.push("Soil moisture is adequate. Avoid over-irrigation.");
+        }
+        if (temp > 30) {
+          tips.push(
+            "High temperatures detected; ensure crops get shade or water."
+          );
+        } else if (temp < 15) {
+          tips.push("Low temperatures; protect crops from frost if necessary.");
+        }
+        if (weather.includes("rain")) {
+          tips.push(
+            "Rain likely soon; plan fertilizer application accordingly."
+          );
+        } else {
+          tips.push(
+            "Clear skies expected; good time for pest and disease monitoring."
+          );
+        }
+        tipsEl.innerHTML = "";
+        tips.forEach((tip) => {
+          const li = document.createElement("li");
+          li.textContent = tip;
+          tipsEl.appendChild(li);
+        });
+      }
+      function fetchWeather(latitude, longitude) {
+        const apiKey = "fd72afbbbe94c395c103da29bda8ce14"; // Replace with your API key
+        const url = `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${apiKey}&units=metric`;
+        fetch(url)
+          .then((response) => response.json())
+          .then((data) => {
+            const weatherMain = data.weather[0].main.toLowerCase();
+            const weatherDesc = data.weather[0].description;
+            const temp = Math.round(data.main.temp);
+            const name = data.name;
+            weatherCondEl.textContent =
+              weatherDesc.charAt(0).toUpperCase() + weatherDesc.slice(1);
+            tempEl.textContent = `${temp}°C`;
+            locationEl.textContent = name;
+            setWeatherIcon(weatherMain);
+            const simulatedSoilMoisture = Math.floor(Math.random() * 25) + 40;
+            soilMoistureEl.textContent = `Soil Moisture: ${simulatedSoilMoisture}%`;
+            updateFarmingTips(temp, simulatedSoilMoisture, weatherMain);
+          })
+          .catch(() => {
+            weatherCondEl.textContent = "Unable to fetch weather data";
+            tempEl.textContent = "";
+            locationEl.textContent = "";
+            soilMoistureEl.textContent = "";
+            tipsEl.innerHTML =
+              "<li>Please check your internet connection.</li>";
+            weatherIconEl.textContent = "error";
+          });
+      }
+      function initWeather() {
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              fetchWeather(position.coords.latitude, position.coords.longitude);
+            },
+            () => {
+              weatherCondEl.textContent = "Location access denied";
+              tipsEl.innerHTML =
+                "<li>Enable location to show local weather and farming tips.</li>";
+              weatherIconEl.textContent = "location_off";
+            }
+          );
+        } else {
+          weatherCondEl.textContent = "Geolocation not supported";
+          tipsEl.innerHTML =
+            "<li>Your browser does not support geolocation.</li>";
+          weatherIconEl.textContent = "error";
+        }
+      }
+      initWeather();
+    </script>
+  </body>
+</html>

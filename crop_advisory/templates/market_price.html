@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Smart Crop Advisory</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Material Icons for icons -->
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,100..900;1,100..900&family=Outfit:wght@100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Quicksand:wght@300..700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* ---------------------------- Global Styles ----------------------------- */
+      /* ===== Global Styles ===== */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: poppins, sans-serif;
+      }
+
+      body {
+        height: 100vh;
+        background: #ebf2f8;
+        color: #333;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* ---------------------------- Header ----------------------------- */
+      /* ===== Header (Logo Container) ===== */
+      nav {
+        background: #fdfdfd;
+        font-family: Poppins, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 15px 20px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .logo a {
+        text-decoration: none;
+        font-weight: bold;
+        font-size: 20px;
+        color: #2b7a3d;
+      }
+
+      /* ---------------------------- Content Wrapper (Sidebar + Main) ----------------------------- */
+      .content-wrapper {
+        display: flex;
+        height: calc(100vh - 120px);
+        /* Adjust based on header height */
+      }
+
+      /* ---------------------------- Sidebar Navigation ----------------------------- */
+      .sidebar {
+        width: 240px;
+        height: 100vh;
+        background: #dbe4e9;
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
+        padding: 20px 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+      }
+
+      .nav {
+        list-style: none;
+        margin-top: 20px;
+      }
+
+      .nav li {
+        margin: 10px 0;
+      }
+
+      .nav a {
+        text-decoration: none;
+        color: #373f4c;
+        padding: 12px 20px;
+        display: flex;
+        align-items: center;
+        border-radius: 6px;
+        transition: all 0.1s;
+      }
+
+      .nav a:hover {
+        background: #2472cc;
+        color: #fff;
+      }
+
+      /* ---------------------------- Main Content Area ----------------------------- */
+      .main-content {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+      }
+
+      /* ---------------------------- Filters Section ----------------------------- */
+      .filters {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+      }
+
+      select,
+      button {
+        padding: 8px 12px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+      }
+
+      button {
+        background: #2472cc;
+        color: white;
+        border: none;
+        cursor: pointer;
+        transition: 0.3s;
+      }
+
+      button:hover {
+        background: #2472cc;
+      }
+
+      /* ---------------------------- Toggle Switch Buttons ----------------------------- */
+      .toggle-btns {
+        display: flex;
+        justify-content: center;
+        /* center horizontally */
+        gap: 30px;
+        /* space between toggles */
+        align-items: center;
+        /* vertical alignment */
+        flex-wrap: nowrap;
+        /* no wrapping */
+        margin-bottom: 30px;
+      }
+
+      .toggle-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+      }
+
+      .toggle-switch {
+        position: relative;
+        width: 50px;
+        height: 24px;
+        background: #cbd5e0;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+      }
+
+      .toggle-switch.active {
+        background: #2472cc;
+      }
+
+      .toggle-slider {
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 20px;
+        height: 20px;
+        background: white;
+        border-radius: 50%;
+        transition: transform 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
+
+      .toggle-switch.active .toggle-slider {
+        transform: translateX(26px);
+      }
+
+      .toggle-label {
+        font-size: 14px;
+        font-weight: 500;
+        color: #4a5568;
+        user-select: none;
+      }
+
+      .toggle-label.active {
+        color: #2472cc;
+      }
+
+      /* Focus/Active styles for accessibility */
+      .toggle-switch-label:focus-within .toggle-switch-custom {
+        outline: 2px solid #2472cc;
+      }
+
+      /* ---------------------------- Table Styling ----------------------------- */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        border-radius: 5px;
+        overflow: hidden;
+        margin-bottom: 20px;
+      }
+
+      th,
+      td {
+        border: 1px solid #ddd;
+        padding: 10px;
+        text-align: center;
+        font-size: 14px;
+      }
+
+      th {
+        background: #2472cc;
+        color: white;
+        font-weight: bold;
+      }
+
+      tr:nth-child(even) {
+        background: #f9f9f9;
+      }
+
+      /* ---------------------------- Graph Section ----------------------------- */
+
+      #chart-card {
+        background: #fff;
+        border-radius: 14px;
+        box-shadow: 0 2px 16px rgba(44, 62, 80, 0.08);
+        max-width: auto;
+        margin: 40px auto;
+        padding-bottom: 24px;
+        display: none;
+      }
+
+      .chart-header-bar {
+        background: #2472cc;
+        color: #fff;
+        text-align: center;
+        font-size: 18px;
+        font-weight: 600;
+        letter-spacing: 0.03em;
+        border-radius: 14px 14px 0 0;
+        padding: 16px 0;
+        margin-bottom: 0px;
+      }
+
+      .chart-title {
+        text-align: left;
+        font-size: 20px;
+        font-weight: 700;
+        /* margin: 36px 0 26px 0; */
+        margin: 30px 20px 26px 10px;
+        color: #212121;
+      }
+
+      .chart-content {
+        padding: 0 12px;
+        display: flex;
+        justify-content: center;
+      }
+    </style>
+  </head>
+
+  <body>
+    <header>
+      <nav>
+        <div class="logo"><a href="#">🌱 Smart Crop Advisory</a></div>
+      </nav>
+    </header>
+
+    <!-- Sidebar + Main Content -->
+    <div class="content-wrapper">
+      <!-- Sidebar Navigation -->
+      <div class="sidebar">
+        <ul class="nav">
+          <li>
+            <a href="#" onclick="gotoHome()">
+              <span class="material-symbols-outlined">dashboard</span>
+              Dashboard
+            </a>
+          </li>
+          <li>
+            <a href="#" onclick="gotoChatbot()">
+              <span class="material-symbols-outlined">smart_toy</span>
+              Chatbot
+            </a>
+          </li>
+          <li>
+            <a href="#" class="active">
+              <span class="material-symbols-outlined">shopping_cart</span>
+              Market Price
+            </a>
+          </li>
+          <li>
+            <a href="#" onclick="gotoPest()">
+              <span class="material-symbols-outlined">pest_control</span>
+              Pest Detection
+            </a>
+          </li>
+          <li>
+            <a href="http://localhost:8000/weather">
+              <span class="material-symbols-outlined">groups</span>
+              Weather
+            </a>
+          </li>
+          <li>
+            <a href="http://localhost:8000/articles"
+              ><span class="material-symbols-outlined">article</span>Articles</a
+            >
+          </li>
+        </ul>
+      </div>
+
+      <!-- Main Content Area -->
+      <div class="main-content">
+        <h2
+          style="
+            color: #555;
+            font-size: 24px;
+            margin-bottom: 20px;
+            text-align: center;
+          "
+        >
+          Market Price
+        </h2>
+
+        <!-- Filters Section -->
+        <div class="filters">
+          <form action="{% url 'price' %}" method="get">
+            <select id="commodity" name="commodity">
+              <option value="" disabled selected>Select Commodity</option>
+            </select>
+
+            <select id="state" name="state">
+              <option value="" disabled selected>Select State</option>
+            </select>
+
+            <select id="district" name="district">
+              <option value="" disabled selected>District</option>
+            </select>
+            <button>Enter</button>
+          </form>
+        </div>
+        <!-- Toggle View Buttons (Switches) -->
+        <div class="toggle-btns">
+          <div
+            class="toggle-group"
+            id="viewDataToggle"
+            onclick="toggleView('table')"
+          >
+            <div class="toggle-switch active">
+              <div class="toggle-slider"></div>
+            </div>
+            <label class="toggle-label active">View Data</label>
+          </div>
+          <div
+            class="toggle-group"
+            id="viewGraphToggle"
+            onclick="toggleView('chart')"
+          >
+            <div class="toggle-switch">
+              <div class="toggle-slider"></div>
+            </div>
+            <label class="toggle-label">View Graph</label>
+          </div>
+        </div>
+
+        <!-- Table Section -->
+        <div id="tableContainer">
+          <table>
+            <thead>
+              <tr>
+                <th>City</th>
+                <th>Commodity</th>
+                <th>Min Price</th>
+                <th>Max Price</th>
+                <th>Modal Price</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {% for i in data %}
+
+              <tr>
+                <td>{{i.city}}</td>
+                <td>{{i.commodity}}</td>
+                <td>{{i.min_Price}}</td>
+                <td>{{i.max_Price}}</td>
+                <td>{{i.modal_Price}}</td>
+                <td>{{i.date}}</td>
+              </tr>
+
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <!-- Graph Section -->
+        <div id="chart-card">
+          <div class="chart-header-bar">Commodity Price</div>
+          <div class="chart-title">Pest Market Price Trends</div>
+          <div class="chart-content">
+            <!-- Chart.js canvas dynamically added here when data loaded -->
+            <canvas id="priceChart" width="800" height="350"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- JavaScript Section -->
+    <script>
+      // Toggle logic for switch buttons
+      const viewDataToggle = document.getElementById("viewDataToggle");
+      const viewGraphToggle = document.getElementById("viewGraphToggle");
+      const tableContainer = document.getElementById("tableContainer");
+      const chartCard = document.getElementById("chart-card");
+
+      function renderChart(data) {
+        if (!data || data.length === 0) return;
+
+        const ctx = document.getElementById("priceChart").getContext("2d");
+        const labels = data.map((item) => item.date);
+        const modalPrices = data.map((item) => item.modal_Price);
+        const cities = data.map((item) => item.city);
+
+        // Destroy old chart if exists (prevents overlap)
+        if (window.priceChartInstance) {
+          window.priceChartInstance.destroy();
+        }
+
+        window.priceChartInstance = new Chart(ctx, {
+          type: "line",
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: "Modal Price",
+                data: modalPrices,
+                borderColor: "rgba(75, 192, 192, 1)",
+                backgroundColor: "rgba(75, 192, 192, 0.2)",
+                fill: true,
+                tension: 0.3,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              title: {
+                display: true,
+                text: "Market Price Trends",
+              },
+              tooltip: {
+                callbacks: {
+                  label: function (context) {
+                    const i = context.dataIndex;
+                    return `City: ${cities[i]}, Modal Price: ₹${modalPrices[i]}`;
+                  },
+                },
+              },
+            },
+            scales: {
+              x: {
+                title: { display: true, text: "Date" },
+              },
+              y: {
+                title: { display: true, text: "Price (₹)" },
+                beginAtZero: true,
+              },
+            },
+          },
+        });
+      }
+
+      function toggleView(viewType) {
+        if (viewType === "table") {
+          viewDataToggle
+            .querySelector(".toggle-switch")
+            .classList.add("active");
+          viewDataToggle.querySelector(".toggle-label").classList.add("active");
+          viewGraphToggle
+            .querySelector(".toggle-switch")
+            .classList.remove("active");
+          viewGraphToggle
+            .querySelector(".toggle-label")
+            .classList.remove("active");
+
+          tableContainer.style.display = "block";
+          chartCard.style.display = "none";
+        } else {
+          viewGraphToggle
+            .querySelector(".toggle-switch")
+            .classList.add("active");
+          viewGraphToggle
+            .querySelector(".toggle-label")
+            .classList.add("active");
+          viewDataToggle
+            .querySelector(".toggle-switch")
+            .classList.remove("active");
+          viewDataToggle
+            .querySelector(".toggle-label")
+            .classList.remove("active");
+
+          tableContainer.style.display = "none";
+          chartCard.style.display = "block";
+
+          if (chartData.length > 0) {
+            renderChart(chartData);
+          }
+        }
+      }
+
+      // Initialize with table view active
+      toggleView("table");
+
+      function gotoPest() {
+        window.location.href = "http://localhost:8000/pest";
+      }
+
+      function gotoChatbot() {
+        window.location.href = "http://localhost:8000/chatbot";
+      }
+
+      function gotoHome() {
+        window.location.href = "http://localhost:8000";
+      }
+
+      fetch("{% url 'market_price_view' %}?type=commodities", {
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          let commoditySelect = document.getElementById("commodity");
+          data.commodities.forEach((item) => {
+            let opt = document.createElement("option");
+            opt.value = item;
+            opt.textContent = item;
+            commoditySelect.appendChild(opt);
+          });
+        });
+
+      fetch("{% url 'market_price_view' %}?type=states", {
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          let stateSelect = document.getElementById("state");
+          data.states.forEach((item) => {
+            let opt = document.createElement("option");
+            opt.value = item;
+            opt.textContent = item;
+            stateSelect.appendChild(opt);
+          });
+        });
+
+      document.getElementById("state").addEventListener("change", function () {
+        let state = this.value;
+        let districtSelect = document.getElementById("district");
+        districtSelect.innerHTML = "<option value=''>Select District</option>";
+
+        if (state) {
+          fetch(
+            "{% url 'market_price_view' %}?type=districts&state=" +
+              encodeURIComponent(state),
+            { headers: { "X-Requested-With": "XMLHttpRequest" } }
+          )
+            .then((res) => res.json())
+            .then((data) => {
+              data.districts.forEach((item) => {
+                let opt = document.createElement("option");
+                opt.value = item;
+                opt.textContent = item;
+                districtSelect.appendChild(opt);
+              });
+            });
+        }
+      });
+
+      const chartData = JSON.parse("{{ data_json|escapejs }}");
+
+      console.log("Chart Data:", chartData);
+    </script>
+  </body>
+</html>

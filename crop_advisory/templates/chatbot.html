@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Simple Chatbot</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: #f4f6f8;
+        display: flex;
+        justify-content: center;
+        padding: 50px;
+      }
+      .chat-container {
+        width: 500px;
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      #chat-box {
+        flex: 1;
+        padding: 15px;
+        overflow-y: auto;
+        height: 400px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .message {
+        max-width: 80%;
+        padding: 10px 15px;
+        border-radius: 20px;
+        word-wrap: break-word;
+        line-height: 1.5;
+      }
+      .user {
+        align-self: flex-end;
+        background: #1a73e8;
+        color: #fff;
+        border-bottom-right-radius: 0;
+      }
+      .bot {
+        align-self: flex-start;
+        background: #e0f7e9;
+        color: #0f9d58;
+        border-bottom-left-radius: 0;
+      }
+      .input-area {
+        display: flex;
+        border-top: 1px solid #ddd;
+      }
+      #message {
+        flex: 1;
+        border: none;
+        padding: 10px;
+        font-size: 16px;
+      }
+      #message:focus {
+        outline: none;
+      }
+      #send-btn {
+        padding: 0 20px;
+        background: #1a73e8;
+        border: none;
+        color: white;
+        font-weight: bold;
+        cursor: pointer;
+      }
+      #send-btn:hover {
+        background: #155cb0;
+      }
+      /* Optional: smooth scroll animation */
+      #chat-box::-webkit-scrollbar {
+        width: 6px;
+      }
+      #chat-box::-webkit-scrollbar-thumb {
+        background-color: rgba(0, 0, 0, 0.2);
+        border-radius: 3px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="chat-container">
+      <div id="chat-box"></div>
+
+      <div class="input-area">
+        <input type="text" id="message" placeholder="Type your message..." />
+        <button id="send-btn" onclick="sendMessage()">Send</button>
+      </div>
+    </div>
+
+    <script>
+      function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== "") {
+          const cookies = document.cookie.split(";");
+          for (let cookie of cookies) {
+            cookie = cookie.trim();
+            if (cookie.startsWith(name + "=")) {
+              cookieValue = decodeURIComponent(
+                cookie.substring(name.length + 1)
+              );
+              break;
+            }
+          }
+        }
+        return cookieValue;
+      }
+
+      async function sendMessage() {
+        const msgInput = document.getElementById("message");
+        const msg = msgInput.value.trim();
+        if (!msg) return;
+
+        const chatBox = document.getElementById("chat-box");
+
+        // Display user message
+        const userDiv = document.createElement("div");
+        userDiv.className = "message user";
+        userDiv.innerHTML = `<b>You:</b> ${msg}`;
+        chatBox.appendChild(userDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        // Clear input
+        msgInput.value = "";
+
+        // Show "typing..." bot placeholder
+        const botDiv = document.createElement("div");
+        botDiv.className = "message bot";
+        botDiv.innerHTML = `<i>Bot is typing...</i>`;
+        chatBox.appendChild(botDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        try {
+          const resp = await fetch("/chat/", {
+            method: "POST",
+            headers: {
+              "X-CSRFToken": getCookie("csrftoken"),
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: new URLSearchParams({ message: msg }),
+          });
+
+          const data = await resp.json();
+          botDiv.innerHTML = `<b>Agrinav : </b> ${data.reply || "Error"}`;
+
+          chatBox.scrollTop = chatBox.scrollHeight;
+        } catch (err) {
+          botDiv.innerHTML = `<b>Agrinav:</b> Error connecting to server.`;
+        }
+      }
+
+      // Press Enter to send
+      document
+        .getElementById("message")
+        .addEventListener("keypress", function (e) {
+          if (e.key === "Enter") sendMessage();
+        });
+    </script>
+  </body>
+</html>
