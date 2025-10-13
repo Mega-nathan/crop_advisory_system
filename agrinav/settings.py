@@ -80,7 +80,7 @@ DATABASES = { # mysql connectivity
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'crop_advisory',
         'USER': 'root',
-        'PASSWORD': 'megamass',
+        'PASSWORD': '',
         'HOST': 'localhost',   # or IP address of DB server
         'PORT': '3306',
         'OPTIONS': {
