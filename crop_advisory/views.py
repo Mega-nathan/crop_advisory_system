@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render,redirect,get_object_or_404
 
 import json
 from django.core.serializers.json import DjangoJSONEncoder
@@ -6,6 +6,7 @@ from django.core.serializers.json import DjangoJSONEncoder
 #Market price tracking 
 from django.http import JsonResponse
 from .models import crop_price
+from datetime import date, timedelta
 
 
 #for ml model ( pest/disease detection )
@@ -20,6 +21,8 @@ from django.conf import settings
 from .nlp_engine import get_bot_response, preprocess_bot_response 
 from .translator import  detect_language , translate_to_english , translate_to_user_language
 
+#complaint
+from .models import Complaint_Box
 # Create your views here.
 
 def home(req):
@@ -196,12 +199,52 @@ def marketPrice(req):
 
     data = []
     data_json = "[]"
+    recommendation = None
+    message = None
 
     if( commodity and state ):
 
-        data = crop_price.objects.filter(commodity=commodity,state=state,city=district).order_by('-date').values(); #date__gte=seven_days_ago
+        today = date.today()
+        one_month_ago = today - timedelta(days=30)
+
+        data = crop_price.objects.filter(commodity=commodity,state=state,city=district,date__gte=one_month_ago).order_by('-date').values(); #date__gte=seven_days_ago
         data_json = json.dumps(list(data), cls=DjangoJSONEncoder)
-        return render(req,'market_price.html',{"data":data, "data_json": data_json})
+
+        if len(data) == 0:
+            # No data at all
+            message = "No market data available for this crop and location."
+        elif len(data) < 10:
+            # 🔸 Less than 10 days of data → fallback strategy
+            prices = [float(d['modal_Price']) for d in data]
+            latest_price = prices[0]
+            max_price = max(prices)
+            min_price = min(prices)
+
+            if latest_price >= max_price:
+                recommendation = "SELL (Peak Price)"
+            elif latest_price <= min_price:
+                recommendation = "HOLD (Price at Low)"
+            else:
+                recommendation = "HOLD (Uncertain Trend)"
+        else:
+            # ✅ Sufficient data → full 1-month trend analysis
+            prices = [float(d['modal_Price']) for d in data]
+
+            # Define split ratio dynamically based on available data
+            split_index = len(prices) // 3   # roughly 1/3 recent, 2/3 earlier
+            recent_avg = sum(prices[:split_index]) / split_index
+            earlier_avg = sum(prices[split_index:]) / max(len(prices[split_index:]), 1)
+
+            change = ((recent_avg - earlier_avg) / earlier_avg) * 100
+
+            if change > 5:
+                recommendation = "SELL"
+            elif change < -5:
+                recommendation = "HOLD"
+            else:
+                recommendation = "HOLD (Stable)"
+
+        return render(req,'market_price.html',{"data":data, "data_json": data_json,"recommendation":recommendation,"message":message})
 
     return render(req,'market_price.html')
 
@@ -210,3 +253,44 @@ def weather(req):
 
 def articles(req):
     return render(req,'articles.html')
+
+def complaint_box(request):
+    if request.method == "POST":
+        farmer_name = request.POST.get("farmer_name")
+        mobile = request.POST.get("mobile")
+        crop_type = request.POST.get("crop_type")
+        description = request.POST.get("description")
+        image = request.FILES.get("image")
+
+        complaint = Complaint_Box.objects.create(
+            farmer_name=farmer_name,
+            mobile=mobile,
+            crop_type=crop_type,
+            description=description,
+            image=image,
+        )
+
+        # run quick validation check
+        return redirect("validate_complaint", complaint_id=complaint.id)
+
+    return render(request, "complaint_box.html")
+
+def validate_complaint(request, complaint_id):
+    complaint = get_object_or_404(Complaint_Box, id=complaint_id)
+
+    # Fake rule: If crop is rice + "flood" in description -> approve
+    if complaint.crop_type.lower() == "rice" and "flood" in complaint.description.lower():
+        complaint.status = "Approved"
+    elif "damage" in complaint.description.lower():
+        complaint.status = "Under Review"
+    else:
+        complaint.status = "Pending"
+
+    complaint.save()
+    return redirect("admin_dashboard")
+
+
+# iii) Dashboard to display complaints
+def dashboard(request):
+    complaints = Complaint_Box.objects.all().order_by("-created_at")
+    return render(request, "admin_dashboard.html", {"complaints": complaints})
