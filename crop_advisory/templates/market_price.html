@@ -371,6 +371,18 @@
           </div>
         </div>
 
+        {% if message %}
+            <center><p><em><b>{{ message }}</em></b></p></center>
+        {% endif %}
+
+        {% if 'SELL' in recommendation %}
+          <center><span style="color:red;">{{ recommendation }}</span></center>
+        {% elif 'HOLD' in recommendation %}
+          <center><span style="color:green;">{{ recommendation }}</span></center>
+
+        {% endif %}
+
+
         <!-- Table Section -->
         <div id="tableContainer">
           <table>
