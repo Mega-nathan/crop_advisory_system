@@ -30,4 +30,7 @@ urlpatterns = [
     path('market_price_view',views.market_view,name="market_price_view"),
     path('weather',views.weather,name='weather'),
     path('articles',views.articles,name='articles'),
+    path("complaint", views.complaint_box, name="complaint_box"),
+    path("validate/<int:complaint_id>/", views.validate_complaint, name="validate_complaint"),
+    path("admin_dashboard", views.dashboard, name="admin_dashboard"),
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
