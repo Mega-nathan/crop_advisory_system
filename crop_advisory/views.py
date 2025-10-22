@@ -3,6 +3,10 @@ from django.shortcuts import render,redirect,get_object_or_404
 import json
 from django.core.serializers.json import DjangoJSONEncoder
 
+#multilingual articles
+import requests
+from googletrans import Translator
+
 #Market price tracking 
 from django.http import JsonResponse
 from .models import crop_price
@@ -17,19 +21,82 @@ from django.core.files.base import ContentFile # for reading the image
 from django.conf import settings
 
 #chatbot 
-
-from .nlp_engine import get_bot_response, preprocess_bot_response 
+#from .nlp_engine import get_bot_response, preprocess_bot_response 
+from .nlp_engine import  preprocess_bot_response 
 from .translator import  detect_language , translate_to_english , translate_to_user_language
+
+#chatbot offline functionality
+from transformers import pipeline
+from django.http import JsonResponse
+import json 
+import numpy as np
+from sentence_transformers import SentenceTransformer , util
+
 
 #complaint
 from .models import Complaint_Box
-# Create your views here.
+
+#artilces
+translator = Translator()
+
+
+#loading model 
+generator = pipeline("text2text-generation", model="google/flan-t5-small")
+
+# qa_model = pipeline("question-answering",
+#                     model="distilbert-base-uncased-distilled-squad")
+#qa_model = pipeline("question-answering", model="deepset/tinyroberta-squad2") smaller
+#qa_model = pipeline("question-answering", model="sshleifer/tiny-distilroberta-base") even smaller
+
+
+embedder = SentenceTransformer("all-MiniLM-L6-v2")
+
+
+# Load knowledge base
+with open("data.json") as f:
+    knowledge = json.load(f)
+corpus = [item["advice"] for item in knowledge]
+corpus_embeddings = embedder.encode(corpus, convert_to_tensor=True)
+
+
 
 def home(req):
     return render(req,'dashboard.html')
 
 def chatbot(request):
     return render(request, "chatbot_app.html")
+
+def sample_chat(message):
+
+    print(" sample chat Entered ")
+
+    question = message
+    print(question)
+    #question = request.GET.get("query", "")
+    
+    # Simple fixed context (later replaced by retrieved text)
+    # context = """
+    # Farmers can improve soil fertility using organic compost, crop rotation,
+    # and green manure. To control pests in tomato crops, neem oil or biological
+    # controls can be effective.
+    # """
+    query_emb = embedder.encode(question, convert_to_tensor=True)
+    similarity = util.cos_sim(query_emb, corpus_embeddings)
+    best_idx = np.argmax(similarity.cpu().numpy())
+    best_context = corpus[best_idx]
+
+    # if not question:
+    #     return JsonResponse({"answer": "Please ask a question."})
+
+    # answer = qa_model(question=question, context=best_context)
+
+    input_text = f"Question: {question} Context: {best_context}"
+    generated = generator(input_text, max_length=300)
+    answer = generated[0]['generated_text']
+
+    print("Answer : " , answer)
+    # return JsonResponse({"answer": answer["answer"]})
+    return answer
 
 def chat_api(request):
     if request.method == "POST":
@@ -43,7 +110,9 @@ def chat_api(request):
         message_in_english = translate_to_english(user_message, lang)
         print(" Translated Text : ",message_in_english)
 
-        raw_response = get_bot_response(message_in_english)
+        #raw_response = get_bot_response(message_in_english)
+            
+        print(raw_response)
         
         structured_response=preprocess_bot_response(raw_response)
 
@@ -294,3 +363,53 @@ def validate_complaint(request, complaint_id):
 def dashboard(request):
     complaints = Complaint_Box.objects.all().order_by("-created_at")
     return render(request, "admin_dashboard.html", {"complaints": complaints})
+
+
+original_articles = []
+NEWS_API_KEY = "e37b0c5a0091475e8e4b8f0a4d1093d9"
+
+
+def multilingual_article(request):
+    """Fetch agriculture-related news articles and render on homepage"""
+    global original_articles
+
+    url = f"https://newsapi.org/v2/everything?q=agriculture OR farming OR farmers&language=en&apiKey={NEWS_API_KEY}"
+    response = requests.get(url)
+    data = response.json()
+
+    if data.get("status") == "ok":
+        original_articles = data.get("articles", [])[:6]
+    else:
+        original_articles = []
+
+    return render(request, "multilingual_article.html", {"articles": original_articles})
+
+def translate_news(request):
+    """Translate all articles to selected language"""
+    global original_articles
+    print("Entered")
+
+    if request.method == "POST":
+        import json
+        data = json.loads(request.body.decode("utf-8"))
+        selected_lang = data.get("language", "en")
+        print(selected_lang)
+
+        translated_articles = []
+        for article in original_articles:
+            title = article.get("title", "")
+            desc = article.get("description", "")
+
+            translated_title = translator.translate(title, dest=selected_lang).text if title else ""
+            translated_desc = translator.translate(desc, dest=selected_lang).text if desc else ""
+
+            translated_articles.append({
+                "title": translated_title,
+                "description": translated_desc,
+                "urlToImage": article.get("urlToImage"),
+                "url": article.get("url"),
+            })
+
+        return JsonResponse(translated_articles, safe=False)
+
+    return JsonResponse({"error": "Invalid request method"}, status=400)
