@@ -5,7 +5,7 @@ from django.core.serializers.json import DjangoJSONEncoder
 
 #multilingual articles
 import requests
-from googletrans import Translator
+#from googletrans import Translator
 
 #Market price tracking 
 from django.http import JsonResponse
@@ -21,9 +21,9 @@ from django.core.files.base import ContentFile # for reading the image
 from django.conf import settings
 
 #chatbot 
-#from .nlp_engine import get_bot_response, preprocess_bot_response 
+from .nlp_engine import get_bot_response, preprocess_bot_response 
 from .nlp_engine import  preprocess_bot_response 
-from .translator import  detect_language , translate_to_english , translate_to_user_language
+#from .translator import  detect_language , translate_to_english , translate_to_user_language
 
 #chatbot offline functionality
 from transformers import pipeline
@@ -37,11 +37,11 @@ from sentence_transformers import SentenceTransformer , util
 from .models import Complaint_Box
 
 #artilces
-translator = Translator()
+'''translator = Translator()'''
 
 
 #loading model 
-generator = pipeline("text2text-generation", model="google/flan-t5-small")
+'''generator = pipeline("text2text-generation", model="google/flan-t5-small")
 
 # qa_model = pipeline("question-answering",
 #                     model="distilbert-base-uncased-distilled-squad")
@@ -56,7 +56,7 @@ embedder = SentenceTransformer("all-MiniLM-L6-v2")
 with open("data.json") as f:
     knowledge = json.load(f)
 corpus = [item["advice"] for item in knowledge]
-corpus_embeddings = embedder.encode(corpus, convert_to_tensor=True)
+corpus_embeddings = embedder.encode(corpus, convert_to_tensor=True)'''
 
 
 
@@ -66,7 +66,7 @@ def home(req):
 def chatbot(request):
     return render(request, "chatbot_app.html")
 
-def sample_chat(message):
+'''def sample_chat(message):
 
     print(" sample chat Entered ")
 
@@ -96,7 +96,7 @@ def sample_chat(message):
 
     print("Answer : " , answer)
     # return JsonResponse({"answer": answer["answer"]})
-    return answer
+    return answer'''
 
 def chat_api(request):
     if request.method == "POST":
@@ -104,23 +104,24 @@ def chat_api(request):
         user_message = request.POST.get("message", "")
         print(" User Query : ",user_message)
 
-        lang=detect_language(user_message)
+        '''lang=detect_language(user_message)
         print(" Detected Language : ",lang)
 
         message_in_english = translate_to_english(user_message, lang)
-        print(" Translated Text : ",message_in_english)
+        print(" Translated Text : ",message_in_english)'''
 
-        #raw_response = get_bot_response(message_in_english)
+        #raw_response = get_bot_response(message_in_english) for preprocessing
+        raw_response = get_bot_response(user_message) # sample response
             
         print(raw_response)
         
         structured_response=preprocess_bot_response(raw_response)
 
-        translated_response = translate_to_user_language(structured_response, lang)
-        print("User Language text : ",translated_response)
+        #translated_response = translate_to_user_language(structured_response, lang)
+        #print("User Language text : ",translated_response)
 
         
-        return JsonResponse({"reply": translated_response})
+        return JsonResponse({"reply": structured_response})
     return JsonResponse({"error": "POST request required."}, status=400)
 
 
@@ -348,7 +349,7 @@ def validate_complaint(request, complaint_id):
     complaint = get_object_or_404(Complaint_Box, id=complaint_id)
 
     # Fake rule: If crop is rice + "flood" in description -> approve
-    if complaint.crop_type.lower() == "rice" and "flood" in complaint.description.lower():
+    if (complaint.crop_type.lower() == "rice") and ( "flood" in complaint.description.lower() ):
         complaint.status = "Approved"
     elif "damage" in complaint.description.lower():
         complaint.status = "Under Review"
