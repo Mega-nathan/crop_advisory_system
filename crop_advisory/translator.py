@@ -15,7 +15,7 @@ def detect_language(text):
     print(f"Detected language: {lang}")
     return lang
 
-'''def translate_to_english(text, src_lang):
+def translate_to_english(text, src_lang):
     """
     Translate text from src_lang to English.
     If already English, returns the text as is.
@@ -29,7 +29,7 @@ def detect_language(text):
         print("Translation to English error:", e)
         return text
 
-def translate_to_user_language(text, target_lang):
+'''def translate_to_user_language(text, target_lang):
     """
     Translate English text to the target language (user's language).
     If target language is English, returns the text as is.
