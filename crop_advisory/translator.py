@@ -29,20 +29,20 @@ def translate_to_english(text, src_lang):
         print("Translation to English error:", e)
         return text
 
-'''def translate_to_user_language(text, target_lang):
-    """
-    Translate English text to the target language (user's language).
-    If target language is English, returns the text as is.
-    """
-    if target_lang == 'en':
-        return text
-    try:
-        translated = GoogleTranslator(source='en', target=target_lang).translate(text)
-        return translated
-    except Exception as e:
-        print("Translation to user language error:", e)
-        return text
-'''
+    def translate_to_user_language(text, target_lang):
+        """
+        Translate English text to the target language (user's language).
+        If target language is English, returns the text as is.
+        """
+        if target_lang == 'en':
+            return text
+        try:
+            translated = GoogleTranslator(source='en', target=target_lang).translate(text)
+            return translated
+        except Exception as e:
+            print("Translation to user language error:", e)
+            return text
+
 
 
 
