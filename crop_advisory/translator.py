@@ -1,5 +1,5 @@
-# from langdetect import detect, DetectorFactory
-# from deep_translator import GoogleTranslator
+from langdetect import detect, DetectorFactory
+from deep_translator import GoogleTranslator
 
 # DetectorFactory.seed = 0  # For consistent results
 
